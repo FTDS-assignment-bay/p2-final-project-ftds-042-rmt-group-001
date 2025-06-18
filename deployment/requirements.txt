@@ -1,0 +1,9 @@
+pandas
+streamlit
+numpy
+seaborn
+plotly
+matplotlib
+dill
+statsmodels
+huggingface_hub
