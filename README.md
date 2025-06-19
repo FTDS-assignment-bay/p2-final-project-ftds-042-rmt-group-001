@@ -18,13 +18,13 @@ Data yang kami gunakan diperoleh dari **[badanpangan.go.id](https://badanpangan.
 
 ## Anggota Tim
 
-1. **Arcana Anggreliya Klau Rissa** – *Data Engineer*  
+1. [**Arcana Anggreliya Klau Rissa**](https://github.com/ArcanaKael) – *Data Engineer*  
    Memimpin implementasi dan pengembangan workflow engineering menggunakan **Apache Airflow** untuk melakukan **scraping** data secara periodik dan menjalankan proses **ETL** (Extract, Transform, Load). Bertugas mengintegrasikan sistem dan memastikan alur data yang lancar untuk mempersiapkan data yang siap dianalisis dan dimodelkan.
 
-2. **Aris Trisnawan** – *Data Analyst*  
+2. [**Aris Trisnawan**](https://github.com/aristrisnawan) – *Data Analyst*  
    Bertanggung jawab atas eksplorasi dan pembersihan data. Memfokuskan pada analisis eksplorasi data (EDA) dan visualisasi time series untuk mengidentifikasi pola harga sembako. Menghasilkan grafik dan dashboard yang dapat digunakan untuk memantau fluktuasi harga serta memberikan pemahaman yang lebih jelas kepada pengguna akhir.
 
-3. **Elang Cergas Pembrani** – *Data Scientist*  
+3. [**Elang Cergas Pembrani**](https://github.com/elangcergasp) – *Data Scientist*  
    Mengembangkan dan menerapkan berbagai teknik pemodelan time series termasuk **ARIMA**, **SARIMA**, serta metode smoothing seperti **Simple Exponential Smoothing** dan **Holt-Winters**. Memimpin bagian pengujian model dan analisis terkait **seasonality**, **stationarity**, serta **ACF PACF** untuk setiap kombinasi komoditas dan provinsi.
 
 ## Hasil Utama Proyek

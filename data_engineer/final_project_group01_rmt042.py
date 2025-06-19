@@ -3,7 +3,7 @@ import datetime as dt
 from datetime import datetime, timedelta
 from airflow import DAG
 from elasticsearch import Elasticsearch
-from airflow.operators.python import PythonOperator  
+from airflow.operators.python import PythonOperator 
 import pandas as pd
 import psycopg2 as db
 from dateutil.relativedelta import relativedelta 
@@ -13,16 +13,18 @@ import os
 import numpy as np
 # from fake_useragent import UserAgent
 
-
+# Menghasilkan path file CSV berdasarkan ID komoditas dan rentang tanggal
 def get_filename_csv(komoditas_id, start_date, end_date): 
     return f'/opt/airflow/dags/badanpangan/{komoditas_id}/badanpangangoid_{komoditas_id}_{start_date.strftime("%Y%m%d")}_{end_date.strftime("%Y%m%d")}.csv'
 
+# Mendapatkan hari terakhir dari bulan yang diberikan
 def last_day_of_month(any_day):
     # The day 28 exists in every month. 4 days later, it's always next month
     next_month = any_day.replace(day=28) + timedelta(days=4)
     # subtracting the number of the current day brings us back one month
     return next_month - timedelta(days=next_month.day)
 
+# Menghasilkan list periode bulanan dari start_date sampai end_date
 def get_monthly_periods(start_date, end_date, ends_today = True):
     current_date = start_date
 
@@ -39,6 +41,7 @@ def get_monthly_periods(start_date, end_date, ends_today = True):
 
     return periods
 
+# Mengecek file yang sudah ada di direktori berdasarkan struktur folder komoditas_id
 def get_existing_periods(directory_path = '/opt/airflow/dags/badanpangan'):
     # Get all entries (files and directories)
     komoditas_ids = os.listdir(directory_path)
@@ -56,6 +59,7 @@ def get_existing_periods(directory_path = '/opt/airflow/dags/badanpangan'):
             result[komoditas_id].append((start_date, end_date))
     return result
 
+# Mengekstrak JSON hasil response dari API badan pangan menjadi dataframe
 def extract_badanpangan_json(response, komoditas):
     results = []
     for data in response['data']:
@@ -73,6 +77,7 @@ def extract_badanpangan_json(response, komoditas):
     df['date'] = pd.to_datetime(df['date'].str.replace('-', '/'), format='%d/%m/%Y')
     return df
 
+# Dictionary ID dan nama komoditas utama yang digunakan
 komoditas_ids_arr_all = {
     "28": "Beras Medium",
     "35": "Daging Ayam Ras",
@@ -101,6 +106,7 @@ komoditas_ids_arr_all = {
     # "37": "Gula Konsumsi",
 }
 
+# Dictionary ID dan nama seluruh provinsi di Indonesia
 provinsi_ids_arr_all = {
     "1": "Aceh",
     "2": "Sumatera Utara",
@@ -226,6 +232,7 @@ def scrap_from_badanpangan_api():
             continue
 
 def from_scrap_to_db():
+    # Ambil data periode terakhir dari setiap komoditas yang sudah ada di direktori
     periods = get_existing_periods()
     # Only latest month
     # print(periods)
@@ -233,17 +240,19 @@ def from_scrap_to_db():
     periods = {k: [v[-1]] for k, v in periods.items() if k in komoditas_ids_arr_all}
     
     insert_query_fill = []
+    # Loop untuk setiap komoditas dan periode terakhirnya
     for komoditas_id, period in periods.items():
         for p in period:
             df = pd.read_csv(get_filename_csv(komoditas_id, p[0], p[1]))
             print(df)
             
+            # Ambil kolom penting dan duplikasikan untuk kondisi pengecekan
             df2 = pd.DataFrame()
             df2['date'] = df['date']
             df2['komoditas'] = df['komoditas']
             df2['provinsi'] = df['provinsi']
             df2['harga'] = df['harga']
-            
+
             df2['date_where'] = df2['date']
             df2['komoditas_where'] = df2['komoditas']
             df2['provinsi_where'] = df2['provinsi']
@@ -255,14 +264,14 @@ def from_scrap_to_db():
     conn = db.connect(conn_string)
     cursor = conn.cursor()
     insert_query = """INSERT INTO table_jawa
-(date, komoditas, provinsi, harga)
-SELECT %s, %s, %s, %s
-WHERE NOT EXISTS (
-    SELECT date, komoditas, provinsi FROM table_jawa 
-    WHERE date = %s
-    AND komoditas = %s
-    AND provinsi = %s  
-);"""
+    (date, komoditas, provinsi, harga)
+    SELECT %s, %s, %s, %s
+    WHERE NOT EXISTS (
+        SELECT date, komoditas, provinsi FROM table_jawa 
+        WHERE date = %s
+        AND komoditas = %s
+        AND provinsi = %s  
+    );"""
     # Executing the batch INSERT statement
     cursor.executemany(insert_query, insert_query_fill)
 
@@ -325,12 +334,12 @@ with DAG('final_project_group01_rmt042',
          schedule_interval='0 0 * * *', # menjadwalkan setiap Sabtu pukul 09:10, 09:20, dan 09:30
          start_date=dt.datetime(2025, 6, 13) + timedelta(hours=7), # (UTC -7) karena saya berada di zona pdt
          catchup=False) as dag: 
-    # Task to fetch data from PostgreSQL
+    # Task to fetch data from badan pangan API
     scrapping_task = PythonOperator(
         task_id='scrap_from_badanpangan_api', 
         python_callable=scrap_from_badanpangan_api
     )
-    # Task to fetch data from PostgreSQL
+    # Load to PostgreSQL
     save_database_task = PythonOperator(
         task_id='from_scrap_to_db', 
         python_callable=from_scrap_to_db
